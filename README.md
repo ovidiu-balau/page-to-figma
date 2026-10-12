@@ -4,6 +4,8 @@ A Figma plugin that turns web pages into editable Figma layers: frames, live tex
 
 Free and open source (MIT). No account, no usage limits, nothing sent to a server: pages go from your browser or Claude to Figma through a small relay on your own Mac.
 
+![One click in Chrome sends the page to Figma as editable layers, then the headline price is edited like any Figma text](assets/demo.gif)
+
 ## Install (Figma desktop)
 
 **Just the plugin:** download this repo ([ZIP](https://github.com/ovidiu-balau/page-to-figma/archive/refs/heads/main.zip)), then in
