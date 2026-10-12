@@ -43,7 +43,16 @@ Then click the button on any tab. If the plugin is closed, the capture waits and
 Download [page-to-figma.mcpb](https://github.com/ovidiu-balau/page-to-figma/raw/main/dist/page-to-figma.mcpb)
 and double-click it. The Claude app opens it and asks you to install. Then, in any chat, say
 **"send this to Figma"**: Claude sends the artifact it just made (React or HTML) into your open Figma
-file. It also takes a link (`send https://example.com to Figma`) or an HTML file on your computer.
+file. Any wording works ("put it in Figma", "import this into Figma").
+
+| Say | You get |
+| --- | --- |
+| send this to Figma | the artifact from this chat, as a 1440px desktop frame |
+| send it to Figma as mobile | the same at 390px wide |
+| send https://example.com to Figma | a public web page |
+| send ~/Desktop/page.html to Figma | an HTML file on your computer |
+
+Claude sends the code it wrote in the same chat; for a design from another chat, paste its code in first.
 
 The extension starts the relay itself, so nothing else needs to run. Keep Page to Figma open in Figma
 desktop to receive it; anything sent while it is closed imports when you open it (within the hour).
@@ -128,4 +137,5 @@ node test/e2e-extension.mjs kitchen-sink.html 1280   # browser button > relay > 
 - Page scripts run inside the plugin's sandbox (needed for apps that render with JavaScript).
 - Text uses Figma's font metrics, which can differ slightly from the browser's. Wrapped text is widened a little when Figma would otherwise add a line, and text squeezed between inline boxes gets slightly tighter tracking.
 - Icon fonts are imported as sharp 4× bitmaps rather than vectors.
+- Repeated parts only become components when everything but their text and images matches. Cards that each carry a different vector icon stay plain frames, since an instance cannot swap a vector.
 - Shadow DOM content and cross-origin iframes are not captured (iframes import as placeholders).
