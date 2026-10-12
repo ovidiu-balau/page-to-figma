@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kitchen sink</title>
+<link rel="stylesheet" href="kitchen-sink.css">
+<style>
+  :root { --brand: oklch(0.62 0.19 259); }
+  body { margin: 0; font-family: Inter, system-ui, sans-serif; color: #18181b; background: #f8fafc; }
+  .nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 40px; background: #fff; border-bottom: 1px solid #e4e4e7; }
+  .nav a { color: #3f3f46; text-decoration: none; margin-left: 24px; font-size: 14px; }
+  .logo { font-weight: 800; font-size: 20px; letter-spacing: -0.02em; }
+  .hero { padding: 64px 40px; background: linear-gradient(135deg, #0f172a 0%, #312e81 60%, #7c3aed 100%); color: white; position: relative; overflow: hidden; }
+  .hero h1 { font-size: 48px; line-height: 1.1; margin: 0 0 16px; max-width: 640px; }
+  .hero p { font-size: 18px; line-height: 28px; max-width: 520px; color: rgba(255,255,255,0.8); margin: 0 0 24px; }
+  .grad-text { background: linear-gradient(90deg, #f472b6, #facc15); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .btn { display: inline-block; padding: 12px 20px; border-radius: 10px; background: var(--brand); color: white; font-weight: 600; box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35); }
+  .btn.ghost { background: transparent; border: 1.5px solid rgba(255,255,255,0.5); box-shadow: none; margin-left: 8px; }
+  .blob { position: absolute; right: -60px; top: -60px; width: 280px; height: 280px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #f472b6, transparent 70%); filter: blur(8px); }
+  .cards { display: flex; gap: 24px; padding: 40px; }
+  .card { flex: 1; background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e4e4e7; }
+  .card h3 { margin: 0 0 8px; font-size: 18px; }
+  .card p { margin: 0; color: #52525b; font-size: 14px; line-height: 22px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #dcfce7; color: #166534; font-size: 12px; font-weight: 600; margin-bottom: 12px; }
+  .media { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 0 40px 40px; }
+  .media img { width: 100%; height: 220px; object-fit: cover; border-radius: 12px; display: block; }
+  .tiled { height: 220px; border-radius: 12px; background: url(tile.png) repeat, #eee; }
+  .list { padding: 0 40px 40px; display: flex; gap: 48px; }
+  .list ul, .list ol { margin: 0; padding-left: 22px; line-height: 26px; }
+  .rich { padding: 0 40px 40px; max-width: 720px; font-size: 16px; line-height: 26px; }
+  .rich code { font-family: ui-monospace, monospace; background: #f4f4f5; padding: 1px 5px; border-radius: 4px; font-size: 14px; }
+  .form { display: flex; gap: 12px; align-items: center; padding: 0 40px 40px; }
+  .form input[type=text] { padding: 10px 12px; border: 1px solid #d4d4d8; border-radius: 8px; width: 240px; font-size: 14px; }
+  .rot { width: 120px; height: 60px; background: #fde68a; transform: rotate(-8deg); display: flex; align-items: center; justify-content: center; font-weight: 700; margin: 0 40px 40px; border-radius: 8px; }
+  .pseudo::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #22c55e; margin-right: 8px; }
+  .pseudo { padding: 0 40px 40px; font-size: 14px; }
+  .dashed { margin: 0 40px 40px; padding: 16px; border: 2px dashed #a1a1aa; border-radius: 12px; }
+  .sides { margin: 0 40px 40px; padding: 16px; border-left: 4px solid #2563eb; border-bottom: 1px solid #e4e4e7; background: #eff6ff; }
+  .conic { width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(from 0deg, #ef4444, #eab308, #22c55e, #3b82f6, #ef4444); margin: 0 40px 40px; }
+  footer { padding: 24px 40px; background: #18181b; color: #a1a1aa; font-size: 13px; }
+</style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="logo">Acme</div>
+    <div><a href="#">Product</a><a href="#">Pricing</a><a href="#">Docs</a></div>
+  </nav>
+  <section class="hero">
+    <div class="blob"></div>
+    <h1>Ship pages <span class="grad-text">faster</span> than ever</h1>
+    <p>Everything you need to design, build and launch. Fully editable, pixel for pixel.</p>
+    <a class="btn">Get started</a><a class="btn ghost">Book a demo</a>
+  </section>
+  <div class="cards">
+    <div class="card"><span class="badge">New</span><h3>Fast imports</h3><p>Turn any web page into layers you can edit, with styles kept intact.</p></div>
+    <div class="card"><h3>Real text</h3><p>Headings, <strong>bold runs</strong>, <em>italics</em> and <a href="https://example.com">links</a> stay as live text.</p></div>
+    <div class="card"><h3>Effects</h3><p>Shadows, gradients, blurs and borders come across as Figma effects.</p></div>
+  </div>
+  <div class="media">
+    <img src="photo.png" alt="Photo">
+    <div class="tiled"></div>
+  </div>
+  <div class="list">
+    <ul><li>First bullet</li><li>Second bullet</li><li>Third bullet</li></ul>
+    <ol><li>Step one</li><li>Step two</li><li>Step three</li></ol>
+  </div>
+  <p class="rich">Mixed inline text with <code>inline code</code>, a line<br>break and some <u>underlined</u> and <s>struck</s> words that wrap across several lines when the paragraph is long enough to need it.</p>
+  <div class="form"><input type="text" placeholder="Email address"><input type="checkbox" checked><select><option>Monthly</option></select><button class="btn">Subscribe</button></div>
+  <div class="rot">Rotated</div>
+  <div class="pseudo">Status: online</div>
+  <div class="dashed">Dashed border box</div>
+  <div class="sides">Left accent border with a different bottom border</div>
+  <div class="conic"></div>
+  <svg width="64" height="64" viewBox="0 0 24 24" style="margin: 0 40px 40px; color: #7c3aed" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+  <footer>© 2026 Acme Inc. All rights reserved.</footer>
+</body>
+</html>

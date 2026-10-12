@@ -1,0 +1,22 @@
+{
+  "name": "page-to-figma",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Figma plugin that imports web pages, HTML and Claude designs as editable Figma layers",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "typecheck": "tsc --noEmit -p .",
+    "test": "node --test test/",
+    "relay": "node relay/server.mjs",
+    "send": "node scripts/send.mjs"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.141.0",
+    "esbuild": "^0.28.2",
+    "jszip": "^3.10.1",
+    "puppeteer-core": "^25.13.0",
+    "typescript": "~5.9.3"
+  },
+  "license": "MIT"
+}

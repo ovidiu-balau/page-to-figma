@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Prototype</title>
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; background: #fff; }
+  .screen { display: none; padding: 48px; min-height: 600px; box-sizing: border-box; }
+  .screen.active { display: block; }
+  #home { background: #eef2ff; }
+  #pricing { background: #fef3c7; }
+  #contact { background: #dcfce7; }
+  h1 { font-size: 40px; margin: 0 0 12px; }
+  .tabs { display: flex; gap: 8px; margin-top: 24px; }
+  .tabs button { padding: 8px 14px; border-radius: 8px; border: 1px solid #c7d2fe; background: white; }
+</style>
+</head>
+<body>
+  <div class="screen active" id="home"><h1>Home</h1><p>Welcome to the prototype home screen with some text.</p><div class="tabs"><button>One</button><button>Two</button></div></div>
+  <div class="screen" id="pricing"><h1>Pricing</h1><p>Three plans that scale with your team and needs.</p></div>
+  <div class="screen" id="contact"><h1>Contact</h1><p>Write to us and we will reply within a day.</p></div>
+  <script>document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {});</script>
+</body>
+</html>

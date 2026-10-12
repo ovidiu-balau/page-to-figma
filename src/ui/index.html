@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page to Figma</title>
+  <style>/*__CSS__*/</style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="tabs" role="tablist" aria-label="Import method">
+      <button type="button" class="tab active" id="tab-url" data-tab="url" role="tab" aria-selected="true" aria-controls="panel-url">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25"/><path d="M1.75 8h12.5M8 1.75c1.8 1.9 2.6 4 2.6 6.25S9.8 12.35 8 14.25C6.2 12.35 5.4 10.25 5.4 8S6.2 3.65 8 1.75z"/></svg>URL
+      </button>
+      <button type="button" class="tab" id="tab-file" data-tab="file" role="tab" aria-selected="false" aria-controls="panel-file" tabindex="-1">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10.5V2.5M4.75 5.75 8 2.5l3.25 3.25M2.5 10v2.25c0 .7.55 1.25 1.25 1.25h8.5c.7 0 1.25-.55 1.25-1.25V10"/></svg>Upload File
+      </button>
+      <button type="button" class="tab" id="tab-code" data-tab="code" role="tab" aria-selected="false" aria-controls="panel-code" tabindex="-1">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4.5 2 8l3.5 3.5M10.5 4.5 14 8l-3.5 3.5"/></svg>Paste Code
+      </button>
+      <button type="button" class="tab" id="tab-options" data-tab="options" role="tab" aria-selected="false" aria-controls="panel-options" tabindex="-1">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4.5h6M11.5 4.5h2M2.5 11.5h2M7.5 11.5h6"/><circle cx="10" cy="4.5" r="1.5"/><circle cx="6" cy="11.5" r="1.5"/></svg>Options
+      </button>
+    </div>
+    <span class="relay-chip" id="relay-chip" hidden title="Captures from the Send to Figma browser button import automatically">Browser button ready</span>
+  </header>
+
+  <main class="content">
+    <section id="panel-url" class="panel active" role="tabpanel" aria-labelledby="tab-url">
+      <div class="intro">
+        <div class="intro-art" aria-hidden="true">
+          <svg viewBox="0 0 120 84"><rect x="8" y="10" width="104" height="66" rx="10" class="art-card"/><rect x="8" y="10" width="104" height="16" rx="10" class="art-bar"/><circle cx="20" cy="18" r="3" class="art-dot"/><circle cx="30" cy="18" r="3" class="art-dot"/><rect x="20" y="36" width="44" height="8" rx="4" class="art-accent"/><rect x="20" y="50" width="80" height="5" rx="2.5" class="art-line"/><rect x="20" y="60" width="62" height="5" rx="2.5" class="art-line"/></svg>
+        </div>
+        <h2>Import a live page</h2>
+        <p>Paste a link and get every section back as editable layers.</p>
+      </div>
+      <div class="stack">
+        <div class="field">
+          <div class="field-heading"><label for="url-input">Website URL</label><button type="button" class="text-button" data-clear="url-input">Clear</button></div>
+          <div class="input-icon">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.6 9.4a2.6 2.6 0 0 0 3.7 0l2.4-2.4a2.6 2.6 0 0 0-3.7-3.7l-.7.7M9.4 6.6a2.6 2.6 0 0 0-3.7 0L3.3 9a2.6 2.6 0 0 0 3.7 3.7l.7-.7"/></svg>
+            <input type="url" id="url-input" placeholder="https://example.com" spellcheck="false" autocapitalize="off" autocomplete="url" aria-describedby="url-help">
+          </div>
+        </div>
+        <label class="setting-row surface" for="dark-mode">
+          <span><span class="setting-title">Capture in dark mode</span><span class="setting-description">Render the page with its dark theme switched on.</span></span>
+          <input type="checkbox" id="dark-mode" class="switch" role="switch">
+        </label>
+        <div class="note" id="url-help">
+          <span class="note-icon" aria-hidden="true">i</span>
+          <p>Public pages work best. For sign-in pages, local builds or app states, save the page and use <button type="button" class="inline-link" data-switch-tab="file">Upload File</button>.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-file" class="panel" role="tabpanel" aria-labelledby="tab-file">
+      <div class="section-heading"><h2>Upload your pages</h2><p>One page, a folder of pages, or a whole zipped prototype.</p></div>
+      <button type="button" id="dropzone" class="dropzone">
+        <span class="dropzone-art" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="10" y="6" width="28" height="36" rx="5" class="art-card"/><path d="M17 17h14M17 23h14M17 29h9" class="art-stroke"/><circle cx="35" cy="35" r="8" class="art-accent"/><path d="M35 31.5v7M31.5 35h7" class="art-plus"/></svg></span>
+        <span class="dropzone-title" id="dropzone-title">Choose files or drop them here</span>
+        <span class="dropzone-description" id="dropzone-description">HTML files, with their CSS and images, or a ZIP</span>
+        <span class="file-types"><span>.html</span><span>.zip</span><span>.h2f.json</span><span>images</span></span>
+      </button>
+      <input type="file" id="file-input" multiple class="hidden" accept=".html,.htm,.zip,.json,.css,.js,.png,.jpg,.jpeg,.gif,.svg,.webp,.avif,.woff,.woff2,.ttf,.otf">
+      <div class="send-card">
+        <div class="send-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="11" height="15" rx="2.5"/><path d="M11 11.5h9m-3-3 3 3-3 3"/></svg></div>
+        <div>
+          <h3>Send from your browser</h3>
+          <p>Click the Send to Figma button on any tab, including pages you are signed in to. While this plugin is open, the page arrives here and imports straight away.</p>
+          <p class="send-status" id="send-status">Start the relay with <code>npm run relay</code> and load the extension folder in Chrome.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-code" class="panel" role="tabpanel" aria-labelledby="tab-code">
+      <div class="section-heading"><h2>Paste your code</h2><p>Drop in a snippet or a full document and see it as layers.</p></div>
+      <div class="editor html-editor">
+        <div class="editor-heading"><label for="html-input">HTML</label><button type="button" class="text-button" data-clear="html-input">Clear</button></div>
+        <textarea id="html-input" spellcheck="false" autocapitalize="off" placeholder="<div class=&quot;card&quot;>&#10;  <h1>Hello</h1>&#10;</div>"></textarea>
+      </div>
+      <div class="editor css-editor">
+        <div class="editor-heading"><label for="css-input">CSS <span class="optional">Optional</span></label><button type="button" class="text-button" data-clear="css-input">Clear</button></div>
+        <textarea id="css-input" spellcheck="false" autocapitalize="off" placeholder=".card {&#10;  padding: 24px;&#10;  border-radius: 12px;&#10;}"></textarea>
+      </div>
+    </section>
+
+    <section id="panel-options" class="panel" role="tabpanel" aria-labelledby="tab-options">
+      <div class="section-heading"><h2>Options</h2><p>Choose how pages turn into layers.</p></div>
+      <h3 class="group-title">Import</h3>
+      <div class="card">
+        <label class="setting-row" for="opt-autolayout"><span><span class="setting-title">Use Auto Layout</span><span class="setting-description">Turn Flexbox and Grid containers into Auto Layout frames where the result matches the page.</span></span><input type="checkbox" id="opt-autolayout" class="switch" role="switch" checked></label>
+        <label class="setting-row" for="opt-overlays"><span><span class="setting-title">Leave out pop-ups</span><span class="setting-description">Skip cookie banners, chat bubbles and modals that float over the page.</span></span><input type="checkbox" id="opt-overlays" class="switch" role="switch" checked></label>
+        <label class="setting-row" for="opt-images"><span><span class="setting-title">Include images</span><span class="setting-description">Download images and place them in the design.</span></span><input type="checkbox" id="opt-images" class="switch" role="switch" checked></label>
+      </div>
+      <h3 class="group-title">Tailwind CSS</h3>
+      <div class="card">
+        <label class="setting-row" for="opt-tailwind"><span><span class="setting-title">Enable Tailwind CSS</span><span class="setting-description">Load Tailwind when the markup uses its classes but ships no stylesheet.</span></span><input type="checkbox" id="opt-tailwind" class="switch" role="switch" checked></label>
+        <label class="setting-row" for="opt-preflight"><span><span class="setting-title">Disable Preflight</span><span class="setting-description">Skip Tailwind's base reset so the page's own styles win.</span></span><input type="checkbox" id="opt-preflight" class="switch" role="switch" checked></label>
+        <div class="setting-field"><div class="field-heading"><label for="tailwind-config">Custom Tailwind config</label><span class="tag">JSON</span></div><textarea id="tailwind-config" spellcheck="false" placeholder='{ "theme": { "extend": {} } }'></textarea></div>
+        <div class="setting-row"><label for="opt-fontsize" class="setting-title">Root font size</label><div class="number-field"><input type="number" id="opt-fontsize" value="16" min="1" max="200"><span>px</span></div></div>
+      </div>
+      <h3 class="group-title">Network</h3>
+      <div class="card setting-field">
+        <label for="proxy-url">CORS proxy URL</label>
+        <input type="url" id="proxy-url" spellcheck="false" autocapitalize="off" placeholder="https://your-proxy.example.workers.dev/" aria-describedby="proxy-help">
+        <p class="help" id="proxy-help">Most sites block direct requests from plugins. A proxy fetches pages and images for you. Use <code>{url}</code> as a placeholder, or the URL is passed as <code>?url=</code>.</p>
+      </div>
+    </section>
+
+    <section id="panel-pages" class="panel pages-panel" aria-labelledby="pages-title">
+      <div class="pages-head">
+        <button type="button" class="icon-button" id="pages-back" aria-label="Back"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3.5 5.5 8l4.5 4.5"/></svg></button>
+        <div><h2 id="pages-title">Pages found</h2><p id="pages-sub">Pick the pages to import. Click a name to rename it.</p></div>
+        <label class="select-all"><input type="checkbox" id="pages-all" checked> All</label>
+      </div>
+      <ul class="pages-list" id="pages-list"></ul>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="status-line"><span id="status" class="status info" role="status" aria-live="polite">Ready to import</span></div>
+    <div class="footer-actions">
+      <label for="viewport" class="viewport-label">Viewport</label>
+      <select id="viewport" title="Viewport width for import">
+        <option value="source-default" selected>Default · 1440 px</option>
+        <option value="1920">Desktop · 1920 px</option>
+        <option value="1440">Laptop · 1440 px</option>
+        <option value="1024">Tablet L · 1024 px</option>
+        <option value="768">Tablet P · 768 px</option>
+        <option value="390">Mobile · 390 px</option>
+      </select>
+      <button type="button" id="import-btn" class="btn-primary">Import URL</button>
+    </div>
+  </footer>
+
+  <div id="font-sheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="font-sheet-title" hidden>
+    <div class="sheet-header">
+      <div>
+        <div class="sheet-title" id="font-sheet-title">Missing fonts <span class="count" id="font-count">0</span></div>
+        <div class="sheet-sub">These fonts are not installed in Figma. Pick a replacement for each, then import.</div>
+      </div>
+      <button type="button" class="icon-button" id="font-close" aria-label="Close"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg></button>
+    </div>
+    <div class="sheet-body" id="font-list"></div>
+    <div class="sheet-footer">
+      <span class="hint">Replacements apply to this import only.</span>
+      <button type="button" id="font-apply" class="btn-primary">Apply and import</button>
+    </div>
+  </div>
+  <div id="render-host" aria-hidden="true"></div>
+  <script>/*__JS__*/</script>
+</body>
+</html>

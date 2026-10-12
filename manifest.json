@@ -1,0 +1,20 @@
+{
+  "name": "Page to Figma",
+  "id": "page-to-figma",
+  "api": "1.0.0",
+  "main": "dist/code.js",
+  "ui": "dist/ui.html",
+  "editorType": [
+    "figma"
+  ],
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": [
+      "*"
+    ],
+    "reasoning": "Imports pages, stylesheets, fonts and images from URLs the user chooses, the Tailwind CDN and an optional user-configured CORS proxy. The local relay on localhost:7801 delivers pages sent from the companion browser extension.",
+    "devAllowedDomains": [
+      "http://localhost:7801"
+    ]
+  }
+}

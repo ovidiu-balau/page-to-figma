@@ -1,0 +1,7 @@
+/* Linked stylesheet: proves <link> inlining and relative url() rewriting. */
+.nav { box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02); }
+@media (prefers-color-scheme: dark) {
+  body { background: #09090b; color: #fafafa; }
+  .card { background: #18181b; border-color: #27272a; }
+  .card p { color: #a1a1aa; }
+}
