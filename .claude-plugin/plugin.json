@@ -1,0 +1,10 @@
+{
+  "name": "page-to-figma",
+  "version": "1.0.0",
+  "description": "Send Claude designs, artifacts, HTML files and web pages into Figma as editable layers. Say \"send this to Figma\".",
+  "author": { "name": "Ovidiu Balau", "url": "https://github.com/ovidiu-balau" },
+  "homepage": "https://github.com/ovidiu-balau/page-to-figma",
+  "repository": "https://github.com/ovidiu-balau/page-to-figma",
+  "license": "MIT",
+  "keywords": ["figma", "design", "html", "artifacts", "claude-design"]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "page-to-figma",
+  "description": "Page to Figma: send Claude designs and web pages into Figma as editable layers.",
+  "owner": {
+    "name": "Ovidiu Balau",
+    "url": "https://github.com/ovidiu-balau"
+  },
+  "plugins": [
+    {
+      "name": "page-to-figma",
+      "source": "./",
+      "description": "Send Claude designs, artifacts, HTML files and web pages into Figma as editable layers.",
+      "category": "design"
+    }
+  ]
+}

@@ -18,7 +18,7 @@ cd ~/Projects/page-to-figma
 sh scripts/setup.sh
 ```
 
-That builds the plugin, starts the relay at login and installs the `send-to-figma` Claude skill.
+That builds the plugin, starts the relay at login and installs the Claude plugin.
 
 In Figma desktop: **Plugins > Development > Import plugin from manifest…** and pick `manifest.json` in this folder. It then appears under **Plugins > Development > Page to Figma**. After the first run, **Cmd + Option + P** reruns it.
 
@@ -36,16 +36,26 @@ Then click the button on any tab. If the plugin is closed, the capture waits and
 
 ## Send from Claude
 
-`scripts/send.mjs` pushes a page to the open plugin through the same relay, no browser needed:
+Install the Claude Code plugin (Claude Code 2.1.275 or later; it also works in the Claude desktop app's Code tab):
 
-```sh
-npm run send -- page.html --title "Homepage" --width 1440      # a local file, with the files beside it embedded
-npm run send -- https://example.com                            # a URL, fetched and rendered in the plugin
+```
+/plugin install page-to-figma --marketplace ovidiu-balau/page-to-figma
 ```
 
-Pages keep their scripts, so designs that render with JavaScript still import. The `send-to-figma`
-Claude skill (in `~/.claude/skills/send-to-figma`) uses this: in any Claude session, say "send this
-to Figma" and the current artifact or Claude Design canvas lands in Figma, one frame per artboard.
+On older versions: `/plugin marketplace add ovidiu-balau/page-to-figma`, then `/plugin install page-to-figma@page-to-figma`.
+
+Then say **"send this to Figma"**. Claude sends the artifact or Claude Design canvas you are working on,
+one frame per artboard, a local HTML file, or a URL. The plugin only needs Node.js 18+ and starts the
+relay itself if it is not running. Keep Page to Figma open in Figma desktop to receive it.
+
+Without Claude, the same command works from a terminal:
+
+```sh
+node scripts/send.mjs page.html --title "Homepage" --width 1440   # a local file, with the files beside it embedded
+node scripts/send.mjs https://example.com                         # a URL, fetched and rendered in the plugin
+```
+
+Pages keep their scripts, so designs that render with JavaScript still import.
 
 ## Use
 
