@@ -162,6 +162,7 @@ export interface FontResolution {
 export interface ImportSettings {
   autoLayout: boolean;
   includeImages: boolean;
+  components?: boolean; // repeated parts become components; text and colors become styles
 }
 
 // UI -> main
@@ -195,6 +196,7 @@ export interface PersistedSettings {
   autoLayout: boolean;
   includeImages: boolean;
   hideOverlays: boolean;
+  components: boolean;
   tailwind: boolean;
   disablePreflight: boolean;
   tailwindConfig: string;
@@ -212,6 +214,7 @@ export const DEFAULT_SETTINGS: PersistedSettings = {
   autoLayout: true,
   includeImages: true,
   hideOverlays: true,
+  components: true,
   tailwind: true,
   disablePreflight: true,
   tailwindConfig: '',

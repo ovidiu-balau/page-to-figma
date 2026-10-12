@@ -1,5 +1,5 @@
 import type {
-  BoxStyle, Fill, FrameData, ImageData, NodeData, RGBA, Shadow, SvgData, TextData, ImportSettings,
+  BoxStyle, Fill, FrameData, ImageData, NodeData, RGBA, Shadow, SvgData, TextData, TextRun, ImportSettings,
 } from '../shared/types';
 import { loadFont, pickFont } from './fonts';
 
@@ -9,6 +9,13 @@ export class CancelledError extends Error {
   }
 }
 
+// Turns repeated parts into component instances (see components.ts).
+export interface ComponentSystem {
+  readonly record: Map<NodeData, string>;
+  isOccurrence(node: NodeData): boolean;
+  place(node: FrameData, ctx: BuildContext): Promise<SceneNode>;
+}
+
 export interface BuildContext {
   images: Map<string, Image | null>;
   fontMap: Record<string, string>; // CSS stack -> Figma family
@@ -16,6 +23,7 @@ export interface BuildContext {
   isCancelled: () => boolean;
   onProgress: (built: number) => void;
   built: number;
+  components?: ComponentSystem;
 }
 
 const MIN_SIZE = 0.01;
@@ -50,7 +58,7 @@ function toPaint(fill: Fill, ctx: BuildContext): Paint | null {
   };
 }
 
-function toPaints(fills: Fill[], ctx: BuildContext): Paint[] {
+export function toPaints(fills: Fill[], ctx: BuildContext): Paint[] {
   const out: Paint[] = [];
   for (const f of fills) {
     const p = toPaint(f, ctx);
@@ -183,8 +191,9 @@ async function tick(ctx: BuildContext): Promise<void> {
   }
 }
 
-async function buildFrame(data: FrameData, ctx: BuildContext): Promise<FrameNode> {
-  const frame = figma.createFrame();
+export async function buildFrame(data: FrameData, ctx: BuildContext, asComponent = false): Promise<FrameNode> {
+  // A component takes the same frame properties, so it is built the same way.
+  const frame = asComponent ? (figma.createComponent() as unknown as FrameNode) : figma.createFrame();
   frame.name = data.name;
   const w = Math.max(data.width, MIN_SIZE);
   const h = Math.max(data.height, MIN_SIZE);
@@ -205,7 +214,7 @@ async function buildFrame(data: FrameData, ctx: BuildContext): Promise<FrameNode
     frame.resize(w, h);
   }
   for (const child of data.children) {
-    const node = await buildNode(child, ctx);
+    const node = ctx.components?.isOccurrence(child) ? await ctx.components.place(child as FrameData, ctx) : await buildNode(child, ctx);
     if (!node) continue;
     frame.appendChild(node);
     place(node, child, frame);
@@ -225,9 +234,9 @@ function childrenInside(frame: FrameNode): boolean {
   );
 }
 
-async function buildText(data: TextData, ctx: BuildContext): Promise<TextNode | null> {
-  const runs = data.runs.filter((r) => r.text.length > 0);
-  if (!runs.length) return null;
+// Sets a text layer's characters and styles them run by run. Also used for the text overrides of
+// component instances.
+export async function applyRuns(text: TextNode, runs: TextRun[], ctx: BuildContext): Promise<void> {
   const fonts: FontName[] = [];
   for (const run of runs) {
     const family = ctx.fontMap[run.fontFamily] ?? 'Inter';
@@ -235,10 +244,12 @@ async function buildText(data: TextData, ctx: BuildContext): Promise<TextNode | 
     await loadFont(font);
     fonts.push(font);
   }
-  const text = figma.createText();
+  if (text.characters.length) {
+    // The layer's current fonts must be loaded before its characters can change.
+    for (const f of text.getRangeAllFontNames(0, text.characters.length)) await loadFont(f);
+  }
   text.fontName = fonts[0];
   text.characters = runs.map((r) => r.text).join('');
-  text.name = text.characters.replace(/\s+/g, ' ').trim().slice(0, 40) || 'Text';
   let start = 0;
   runs.forEach((run, i) => {
     const end = start + run.text.length;
@@ -259,6 +270,14 @@ async function buildText(data: TextData, ctx: BuildContext): Promise<TextNode | 
     }
     start = end;
   });
+}
+
+async function buildText(data: TextData, ctx: BuildContext): Promise<TextNode | null> {
+  const runs = data.runs.filter((r) => r.text.length > 0);
+  if (!runs.length) return null;
+  const text = figma.createText();
+  await applyRuns(text, runs, ctx);
+  text.name = text.characters.replace(/\s+/g, ' ').trim().slice(0, 40) || 'Text';
   text.textAlignHorizontal = data.align;
   if (data.singleLine) {
     text.textAutoResize = 'WIDTH_AND_HEIGHT';
@@ -331,16 +350,23 @@ function buildSvg(data: SvgData): SceneNode {
 
 export async function buildNode(data: NodeData, ctx: BuildContext): Promise<SceneNode | null> {
   await tick(ctx);
+  let node: SceneNode | null;
   switch (data.type) {
     case 'FRAME':
-      return buildFrame(data, ctx);
+      node = await buildFrame(data, ctx);
+      break;
     case 'TEXT':
-      return buildText(data, ctx);
+      node = await buildText(data, ctx);
+      break;
     case 'IMAGE':
-      return buildImage(data, ctx);
+      node = buildImage(data, ctx);
+      break;
     case 'SVG':
-      return buildSvg(data);
+      node = buildSvg(data);
+      break;
   }
+  if (node && ctx.components) ctx.components.record.set(data, node.id);
+  return node;
 }
 
 export async function buildRoot(root: FrameData, ctx: BuildContext): Promise<FrameNode> {

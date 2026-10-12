@@ -1,0 +1,25 @@
+{
+  "manifest_version": "0.2",
+  "name": "page-to-figma",
+  "display_name": "Page to Figma",
+  "version": "1.1.0",
+  "description": "Send Claude artifacts, HTML and web pages into Figma as editable layers.",
+  "long_description": "Say \"send this to Figma\" in a chat and the artifact arrives in your open Figma file as real layers: frames, live text, Auto Layout, components and styles. Works with React and HTML artifacts, any HTML file on your computer, and public web pages.\n\nNeeds the free Page to Figma plugin open in Figma desktop. Everything stays on your computer: pages go to Figma through a small relay on localhost:7801, which this extension starts when needed.",
+  "author": { "name": "Ovidiu Balau", "url": "https://github.com/ovidiu-balau" },
+  "homepage": "https://github.com/ovidiu-balau/page-to-figma",
+  "repository": { "type": "git", "url": "https://github.com/ovidiu-balau/page-to-figma.git" },
+  "support": "https://github.com/ovidiu-balau/page-to-figma/issues",
+  "license": "MIT",
+  "icon": "icon.png",
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.mjs",
+    "mcp_config": { "command": "node", "args": ["${__dirname}/server/index.mjs"] }
+  },
+  "tools": [
+    { "name": "send_to_figma", "description": "Send a React or HTML artifact, an HTML file or a web page into Figma as editable layers." },
+    { "name": "figma_status", "description": "Check whether the Page to Figma plugin is open in Figma." }
+  ],
+  "keywords": ["figma", "design", "html", "react", "artifacts", "import"],
+  "compatibility": { "platforms": ["darwin", "win32", "linux"], "runtimes": { "node": ">=18.0.0" } }
+}

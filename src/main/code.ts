@@ -1,6 +1,8 @@
 import type { ImportDocument, MainMessage, UiMessage } from '../shared/types';
 import { buildRoot, CancelledError, type BuildContext } from './build';
+import { Components } from './components';
 import { resolveFonts } from './fonts';
+import { applyStyles } from './styles';
 
 const SETTINGS_KEY = 'settings:v2';
 // v2 turned Auto Layout and pop-up removal on by default; older saved settings adopt both once.
@@ -17,6 +19,7 @@ interface BatchState {
   images: Map<string, Image | null>;
   chunks: Map<string, string[]>;
   frames: FrameNode[];
+  made: { components: number; text: number; color: number };
   cursorX: number;
   cursorY: number;
   cancelled: boolean;
@@ -42,7 +45,7 @@ function startPosition(): { x: number; y: number } {
 
 function newBatch(): BatchState {
   const { x, y } = startPosition();
-  return { images: new Map(), chunks: new Map(), frames: [], cursorX: x, cursorY: y, cancelled: false };
+  return { images: new Map(), chunks: new Map(), frames: [], made: { components: 0, text: 0, color: 0 }, cursorX: x, cursorY: y, cancelled: false };
 }
 
 async function importDoc(msg: Extract<UiMessage, { type: 'import-doc' }>): Promise<void> {
@@ -52,6 +55,7 @@ async function importDoc(msg: Extract<UiMessage, { type: 'import-doc' }>): Promi
   state.chunks.delete(msg.docId);
   if (!parts || parts.some((p) => p === undefined)) throw new Error('Import data arrived incomplete. Please try again.');
   const doc = JSON.parse(parts.join('')) as ImportDocument;
+  const components = msg.settings.components ? new Components(doc.root, msg.settings.autoLayout, `${doc.name} · Components`) : undefined;
   const ctx: BuildContext = {
     images: state.images,
     fontMap: msg.fontMap,
@@ -59,19 +63,47 @@ async function importDoc(msg: Extract<UiMessage, { type: 'import-doc' }>): Promi
     isCancelled: () => state.cancelled,
     onProgress: (built) => send({ type: 'progress', message: `Creating layers… ${built}`, done: built }),
     built: 0,
+    components,
   };
   let frame: FrameNode | null = null;
+  const before = new Set(figma.currentPage.children.map((c) => c.id));
   try {
     frame = await buildRoot(doc.root, ctx);
     frame.name = doc.name;
     frame.x = state.cursorX;
     frame.y = state.cursorY;
     figma.currentPage.appendChild(frame);
+    const board = components?.boardNode();
+    if (board) {
+      // Main components sit on a board under the page they came from.
+      figma.currentPage.appendChild(board);
+      // resize() fixes both axes, so the board is set to grow with its components again afterwards.
+      board.resize(Math.max(frame.width, 600), board.height);
+      board.counterAxisSizingMode = 'AUTO';
+      board.x = frame.x;
+      board.y = frame.y + frame.height + FRAME_GAP;
+      state.made.components += components!.count;
+    }
+    if (msg.settings.components) {
+      send({ type: 'progress', message: 'Creating text and color styles…' });
+      try {
+        const made = await applyStyles(board ? [board, frame] : [frame], doc.name);
+        state.made.text += made.text;
+        state.made.color += made.color;
+      } catch (err) {
+        // The layers are already built; styles are a bonus and never cost the import.
+        console.error('[page-to-figma] styles', err);
+      }
+    }
     state.cursorX += frame.width + FRAME_GAP;
     state.frames.push(frame);
     send({ type: 'doc-done', docId: msg.docId, nodeCount: ctx.built });
   } catch (err) {
+    // New layers start on the page, so a build that stops part-way leaves them there: remove them all.
+    for (const node of [...figma.currentPage.children]) if (!before.has(node.id) && !node.removed) node.remove();
     if (frame && !frame.removed) frame.remove();
+    const board = components?.boardNode();
+    if (board && !board.removed) board.remove();
     throw err;
   }
 }
@@ -84,7 +116,14 @@ function finishBatch(): void {
   if (frames.length) {
     figma.currentPage.selection = frames;
     figma.viewport.scrollAndZoomIntoView(frames);
-    figma.notify(frames.length === 1 ? `Imported "${frames[0].name}"` : `Imported ${frames.length} frames`);
+    const { components, text, color } = state.made;
+    const extras = [
+      components && `${components} component${components > 1 ? 's' : ''}`,
+      text && `${text} text style${text > 1 ? 's' : ''}`,
+      color && `${color} color style${color > 1 ? 's' : ''}`,
+    ].filter(Boolean);
+    const what = frames.length === 1 ? `Imported "${frames[0].name}"` : `Imported ${frames.length} frames`;
+    figma.notify(extras.length ? `${what} with ${extras.join(', ')}` : what);
   }
   send({ type: 'batch-done', frames: frames.length, cancelled: state.cancelled });
 }

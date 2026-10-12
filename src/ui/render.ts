@@ -159,8 +159,16 @@ export async function render(source: SourceDoc, opts: RenderOptions, host: HTMLE
   doc.close();
   await Promise.race([loaded, delay(20000)]);
   if (!doc.documentElement) throw new Error('The page could not be rendered.');
+  // Pages that render with JavaScript after load (React artifacts sent from Claude) mark their root;
+  // wait for it to fill, then for the images and fonts it brought in.
+  const root = doc.querySelector('[data-h2f-wait]');
+  if (root) {
+    const start = Date.now();
+    while (Date.now() - start < 20000 && !root.childElementCount && !(root.textContent ?? '').trim()) await delay(100);
+    await delay(300);
+  }
   await waitForAssets(doc);
-  if (opts.tailwind && html.includes(TAILWIND_CDN)) {
+  if (html.includes(TAILWIND_CDN)) {
     // The Tailwind play CDN generates its stylesheet after load; give it a moment to settle.
     const start = Date.now();
     while (Date.now() - start < 3000 && !Array.from(doc.querySelectorAll('style')).some((s) => (s.textContent ?? '').includes('--tw-'))) {

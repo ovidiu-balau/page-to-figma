@@ -1,6 +1,6 @@
 {
   "name": "page-to-figma",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Figma plugin that imports web pages, HTML and Claude designs as editable Figma layers",
   "scripts": {
@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit -p .",
     "test": "node --test test/",
     "relay": "node relay/server.mjs",
-    "send": "node scripts/send.mjs"
+    "send": "node scripts/send.mjs",
+    "mcpb": "sh scripts/build-mcpb.sh"
   },
   "devDependencies": {
     "@figma/plugin-typings": "^1.141.0",

@@ -38,6 +38,18 @@ Then click the button on any tab. If the plugin is closed, the capture waits and
 
 ## Send from Claude
 
+### Claude desktop app (chat)
+
+Download [page-to-figma.mcpb](https://github.com/ovidiu-balau/page-to-figma/raw/main/dist/page-to-figma.mcpb)
+and double-click it. The Claude app opens it and asks you to install. Then, in any chat, say
+**"send this to Figma"**: Claude sends the artifact it just made (React or HTML) into your open Figma
+file. It also takes a link (`send https://example.com to Figma`) or an HTML file on your computer.
+
+The extension starts the relay itself, so nothing else needs to run. Keep Page to Figma open in Figma
+desktop to receive it; anything sent while it is closed imports when you open it (within the hour).
+
+### Claude Code
+
 Install the Claude Code plugin (Claude Code 2.1.275 or later; it also works in the Claude desktop app's Code tab):
 
 ```
@@ -55,6 +67,7 @@ Without Claude, the same command works from a terminal:
 ```sh
 node scripts/send.mjs page.html --title "Homepage" --width 1440   # a local file, with the files beside it embedded
 node scripts/send.mjs https://example.com                         # a URL, fetched and rendered in the plugin
+node scripts/send.mjs Pricing.jsx                                 # a React component, rendered with Tailwind
 ```
 
 Pages keep their scripts, so designs that render with JavaScript still import.
@@ -75,6 +88,7 @@ If a page uses fonts Figma does not have, a sheet asks for a replacement for eac
 | Option | What it does |
 | --- | --- |
 | Use Auto Layout | On by default. Flex and Grid containers become Auto Layout frames, but only where Auto Layout reproduces the browser's placement exactly. Everything else keeps absolute positions. |
+| Components and styles | On by default. Parts that repeat with the same structure and styling (cards, buttons, list items) become components on a board under the import, with each copy an instance carrying its own text and images. Text sizes and colors used across the page become text and color styles, grouped under the page's name. |
 | Leave out pop-ups | On by default. Skips cookie banners, chat bubbles, newsletter prompts and modals that float over the page. |
 | Include images | Downloads images and embeds them. WebP, AVIF and SVG images are converted for Figma. |
 | Enable Tailwind CSS | Loads the Tailwind play CDN when markup uses Tailwind classes but ships no stylesheet. |

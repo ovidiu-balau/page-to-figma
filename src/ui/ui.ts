@@ -21,6 +21,7 @@ const els = {
   css: $<HTMLTextAreaElement>('css-input'),
   autoLayout: $<HTMLInputElement>('opt-autolayout'),
   overlays: $<HTMLInputElement>('opt-overlays'),
+  components: $<HTMLInputElement>('opt-components'),
   images: $<HTMLInputElement>('opt-images'),
   tailwind: $<HTMLInputElement>('opt-tailwind'),
   preflight: $<HTMLInputElement>('opt-preflight'),
@@ -74,6 +75,7 @@ function readForm(): PersistedSettings {
     autoLayout: els.autoLayout.checked,
     includeImages: els.images.checked,
     hideOverlays: els.overlays.checked,
+    components: els.components.checked,
     tailwind: els.tailwind.checked,
     disablePreflight: els.preflight.checked,
     tailwindConfig: els.twConfig.value,
@@ -92,6 +94,7 @@ function applySettings(s: PersistedSettings): void {
   els.autoLayout.checked = settings.autoLayout;
   els.images.checked = settings.includeImages;
   els.overlays.checked = settings.hideOverlays;
+  els.components.checked = settings.components;
   els.tailwind.checked = settings.tailwind;
   els.preflight.checked = settings.disablePreflight;
   els.twConfig.value = settings.tailwindConfig;
@@ -476,7 +479,7 @@ async function runImport(preset?: SourceDoc[]): Promise<void> {
       const docId = `d${Date.now().toString(36)}${n}`;
       setStatus(docs.length > 1 ? `Creating layers for ${d.doc.name} (${n + 1}/${docs.length})…` : 'Creating layers…');
       await sendDocument(docId, d.doc);
-      post({ type: 'import-doc', docId, fontMap, settings: { autoLayout: s.autoLayout, includeImages: s.includeImages } });
+      post({ type: 'import-doc', docId, fontMap, settings: { autoLayout: s.autoLayout, includeImages: s.includeImages, components: s.components } });
       const reply = await nextMessage(['doc-done', 'error', 'batch-done']);
       if (reply.type === 'error') throw new Error(reply.message);
       if (reply.type === 'batch-done') throw new CancelledImport();
@@ -573,7 +576,7 @@ function init(): void {
   bindFiles();
   els.importBtn.addEventListener('click', onImportClick);
   for (const el of [els.url, els.html, els.css, els.twConfig, els.fontSize, els.proxy]) el.addEventListener('input', scheduleSave);
-  for (const el of [els.dark, els.autoLayout, els.overlays, els.images, els.tailwind, els.preflight, els.viewport]) el.addEventListener('change', scheduleSave);
+  for (const el of [els.dark, els.autoLayout, els.overlays, els.components, els.images, els.tailwind, els.preflight, els.viewport]) el.addEventListener('change', scheduleSave);
   els.url.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !busy) void runImport();
   });

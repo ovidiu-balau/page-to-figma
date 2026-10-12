@@ -70,6 +70,15 @@ back, so never retype it. If it has supporting files (list with `scope: "files"`
 node "<root>/scripts/send.mjs" "<saved page>" --title "<artifact title>" --width 1440
 ```
 
+### A React artifact or component
+
+Save the component source to a `.jsx` (or `.tsx`) file exactly as written, imports and default export
+included, then send it. It renders with React 18 and Tailwind; other packages load from esm.sh.
+
+```sh
+node "<root>/scripts/send.mjs" "<saved>.jsx" --title "<artifact title>" --width 1440
+```
+
 ### A Claude Design export link
 
 The link from Share › Export › Send to (a `claudeusercontent.com/.../serve/export/...html?t=...`
