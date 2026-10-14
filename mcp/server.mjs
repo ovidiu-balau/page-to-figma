@@ -15,7 +15,7 @@ const lib = existsSync(join(here, 'lib', 'page.mjs')) ? join(here, 'lib', 'page.
 const relayScript = existsSync(join(here, 'relay.mjs')) ? join(here, 'relay.mjs') : join(here, '..', 'relay', 'server.mjs');
 const { ensureRelay, pageFromFile, pageFromUrl, postCapture, reactPage, relayHealth } = await import(pathToFileURL(lib).href);
 
-const VERSION = '1.1.0';
+const VERSION = '1.2.0';
 const PLUGIN_HINT = 'In Figma desktop, open Plugins > Page to Figma (or Plugins > Development > Page to Figma).';
 
 const TOOLS = [
@@ -28,7 +28,10 @@ const TOOLS = [
       '`react` for a React artifact (pass the complete component source as written, with its imports and default export; Tailwind classes work), ' +
       '`html` for an HTML artifact or any complete HTML document (inline its CSS), ' +
       '`url` for a public web page, or `path` for an HTML file on this computer. ' +
-      'Always pass the full, final code, never a summary or an excerpt. It arrives as a new frame in the open Figma file.',
+      'Always pass the full, final code, never a summary or an excerpt. It arrives as a new frame in the open Figma file. ' +
+      'When the user names a page or screen ("send the Payment screen"), still pass the whole document and put that name in `only`, ' +
+      'so Figma gets just that part instead of everything again. If Figma already has a frame with the same name, the plugin asks the user ' +
+      'whether to replace it or add a copy; set `existing` only when the user already said which.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -38,6 +41,16 @@ const TOOLS = [
         path: { type: 'string', description: 'Absolute path to an HTML file on this computer.' },
         title: { type: 'string', description: 'Name for the Figma frame, e.g. the artifact title.' },
         width: { type: 'number', description: 'Viewport width in px. 1440 for desktop designs (default), 390 for mobile.' },
+        only: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Names of the pages or screens to import, as they are labelled in the design (a heading such as "02 · Payment", or a page name). Omit to import everything.',
+        },
+        existing: {
+          type: 'string',
+          enum: ['ask', 'replace', 'copy'],
+          description: 'When a frame with the same name is already in Figma: ask the user in the plugin (default), replace it in place, or add a copy.',
+        },
       },
     },
     annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
@@ -74,11 +87,15 @@ async function sendToFigma(a) {
   if (!(await ensureRelay(relayScript))) {
     return text('Could not start the local relay on port 7801. Ask the user to run: npm run relay (in the Page to Figma folder).', true);
   }
-  const { listeners } = await postCapture({ html, title, width, base });
+  const only = Array.isArray(a.only) ? a.only.filter((o) => typeof o === 'string' && o.trim()).map((o) => o.trim()) : [];
+  const existing = ['ask', 'replace', 'copy'].includes(a.existing) ? a.existing : undefined;
+  const { listeners } = await postCapture({ html, title, width, base, only, existing });
+  const what = only.length ? `${only.map((o) => `"${o}"`).join(', ')} from "${title}"` : `"${title}"`;
+  const ask = existing === 'replace' || existing === 'copy' ? '' : ' If a frame with the same name is already there, the plugin asks whether to replace it or add a copy.';
   return text(
     listeners
-      ? `Sent "${title}" to Figma (${width}px wide). It is being imported into the open file now as a new frame.`
-      : `Queued "${title}". Figma is not listening yet: ${PLUGIN_HINT} It imports as soon as the plugin opens (within the hour).`,
+      ? `Sent ${what} to Figma (${width}px wide). It is being imported into the open file now.${ask} If a name is not found, the plugin lists the names it has.`
+      : `Queued ${what}. Figma is not listening yet: ${PLUGIN_HINT} It imports as soon as the plugin opens (within the hour).`,
   );
 }
 

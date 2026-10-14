@@ -197,8 +197,12 @@ export async function ensureRelay(relayScript, relay = RELAY) {
   return health;
 }
 
-export async function postCapture({ html, title, width = 1440, base = '' }, relay = RELAY) {
+// only: names of the pages or screens to import (all of them when empty).
+// existing: what the plugin does when a frame with the same name is already there: 'ask', 'replace' or 'copy'.
+export async function postCapture({ html, title, width = 1440, base = '', only = [], existing }, relay = RELAY) {
   const capture = { version: 1, kind: 'h2f-capture', live: true, url: base, title, width, height: 900, html };
+  if (only.length) capture.only = only;
+  if (existing) capture.existing = existing;
   const res = await fetch(`${relay}/captures`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-h2f-capture': '1' },

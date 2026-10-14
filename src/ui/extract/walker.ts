@@ -1071,7 +1071,7 @@ export function materializePseudos(doc: Document, win: Window): () => void {
 
 export async function extractDocument(
   win: Window, name: string, viewportWidth: number, viewportHeight: number, opts: ExtractOptions,
-  images: ImageRegistry, onProgress: (count: number) => void,
+  images: ImageRegistry, onProgress: (count: number) => void, region?: Element[],
 ): Promise<{ doc: ImportDocument; fonts: FontRequest[]; nodeCount: number }> {
   const doc = win.document;
   const html = doc.documentElement;
@@ -1094,6 +1094,7 @@ export async function extractDocument(
     const s = await boxStyle(html, htmlCs, viewportWidth, height, ctx, extra);
     rootStyle.fills.push(...s.fills.filter((f) => f.kind !== 'solid'));
   }
+  if (region?.length) return extractRegion(region, name, canvas, ctx);
   const children = body === html ? [] : await walkElement(body, { x: 0, y: 0 }, ctx);
   const root: FrameData = {
     type: 'FRAME', name, x: 0, y: 0, width: viewportWidth, height: Math.ceil(height), style: { ...rootStyle, clips: true }, children,
@@ -1113,5 +1114,31 @@ export async function extractDocument(
     }
     cover = next;
   }
+  return { doc: { name, root }, fonts: [...ctx.fonts.values()], nodeCount: ctx.count };
+}
+
+// One screen of a page: the frame is cut to the screen's own box and takes the colour behind it.
+async function extractRegion(
+  els: Element[], name: string, canvas: ReturnType<typeof parseColor>, ctx: Ctx,
+): Promise<{ doc: ImportDocument; fonts: FontRequest[]; nodeCount: number }> {
+  const rects = els.map((el) => el.getBoundingClientRect());
+  const left = Math.min(...rects.map((r) => r.left));
+  const top = Math.min(...rects.map((r) => r.top));
+  const width = Math.max(...rects.map((r) => r.right)) - left;
+  const height = Math.max(...rects.map((r) => r.bottom)) - top;
+  let behind = visible(canvas) ? canvas : null;
+  for (let p = els[0].parentElement; p; p = p.parentElement) {
+    const c = parseColor(ctx.win.getComputedStyle(p).backgroundColor);
+    if (visible(c) && c.a >= 0.99) {
+      behind = c;
+      break;
+    }
+  }
+  const children: NodeData[] = [];
+  for (const el of els) children.push(...(await walkElement(el, { x: left, y: top }, ctx)));
+  const root: FrameData = {
+    type: 'FRAME', name, x: 0, y: 0, width: Math.ceil(width), height: Math.ceil(height),
+    style: { fills: [{ kind: 'solid', color: behind ?? { r: 1, g: 1, b: 1, a: 1 } }], clips: true }, children,
+  };
   return { doc: { name, root }, fonts: [...ctx.fonts.values()], nodeCount: ctx.count };
 }

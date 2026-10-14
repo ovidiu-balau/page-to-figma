@@ -56,7 +56,8 @@ canvas runtime to render.
    node "<root>/scripts/send.mjs" "<saved>/project/<board>" \
      --width <board w> --title "<canvas title> · <board title or file stem>" [--blobs "<saved>/blobs"]
    ```
-   Each becomes its own frame in Figma, placed to the right of what is already there.
+   Each becomes its own frame in Figma, placed to the right of what is already there. Send only the
+   boards the user asked for (see section 3).
 
 Limit: a board that pulls in another board with `<dc-import>` may render without that part.
 
@@ -97,12 +98,27 @@ Send the path; stylesheets, scripts, images and fonts next to it are embedded au
 Best through the Page to Figma Chrome button (captures what the user sees, signed in, with fonts).
 Otherwise `send.mjs "<url>"`, which fetches the page and renders it in the plugin.
 
-## 3. Width
+## 3. Only the page the user means
+
+Figma should hold one current copy of each page, so never re-send a whole design when the user names
+part of it.
+
+- **A named page or screen** ("send the Payment screen", "update 01 · Member Zone"): send the document
+  that holds it, with `--only "<name as labelled>"` (repeat for several). The plugin cuts that screen
+  out by its label or heading and names the frame after it. For a Design canvas, send only the boards
+  whose title matches, not every board.
+- **No name, but the design has several pages or boards and the user worked on one**: send that one.
+  If you cannot tell which, ask, listing the names; do not send them all.
+- **Already in Figma**: by default the plugin asks the user whether to replace the frame with the same
+  name or add a copy. Pass `--replace` only when the user said "replace" or "update", and `--copy`
+  only when they asked for a new copy.
+
+## 4. Width
 
 Use the board's `w` for Design canvases. Otherwise 1440 unless the user names a size or the design
 is clearly mobile (390).
 
-## 4. Report
+## 5. Report
 
 One or two lines: what was sent and how many frames, or that it is queued until the plugin is
 opened. If something rendered empty or broken, say so plainly; do not claim it imported cleanly.

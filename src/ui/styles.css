@@ -221,6 +221,11 @@ html.figma-dark .switch:checked::after { background: #18181b; }
 .btn-primary:hover { opacity: 0.88; }
 .btn-primary:disabled { opacity: 0.4; cursor: default; }
 .btn-primary.cancel { background: var(--soft-2); color: var(--ink); }
+.btn-secondary {
+  border: 1px solid var(--line); border-radius: 8px; padding: 7px 14px; background: var(--bg); color: var(--ink);
+  font-weight: 500; cursor: pointer;
+}
+.btn-secondary:hover { background: var(--soft-2); }
 
 /* Font sheet */
 .sheet {
@@ -241,6 +246,9 @@ html.figma-dark .switch:checked::after { background: #18181b; }
 .font-row select { padding: 6px 8px; font-size: 12px; }
 .sheet-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px var(--gutter); border-top: 1px solid var(--line); }
 .hint { color: var(--muted); font-size: 12px; }
+.sheet-actions { display: flex; gap: 8px; margin-left: auto; }
+.existing-row { padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.setting-row select { width: auto; flex: none; padding: 6px 10px; font-size: 12px; }
 
 #render-host { position: fixed; inset: 0; overflow: hidden; z-index: -1; opacity: 0.001; pointer-events: none; }
 

@@ -866,9 +866,26 @@
   }
   function newBatch() {
     const { x, y } = startPosition();
-    return { images: /* @__PURE__ */ new Map(), chunks: /* @__PURE__ */ new Map(), frames: [], made: { components: 0, text: 0, color: 0 }, cursorX: x, cursorY: y, cancelled: false };
+    return { images: /* @__PURE__ */ new Map(), chunks: /* @__PURE__ */ new Map(), frames: [], made: { components: 0, text: 0, color: 0 }, updated: 0, cursorX: x, cursorY: y, cancelled: false };
+  }
+  function framesNamed(name) {
+    return figma.currentPage.findAll(
+      (n2) => {
+        var _a, _b;
+        return n2.type === "FRAME" && n2.name === name && (((_a = n2.parent) == null ? void 0 : _a.type) === "PAGE" || ((_b = n2.parent) == null ? void 0 : _b.type) === "SECTION");
+      }
+    );
+  }
+  function swap(old, next) {
+    const parent = old.parent;
+    const { x, y } = old;
+    parent.insertChild(parent.children.indexOf(old), next);
+    next.x = x;
+    next.y = y;
+    old.remove();
   }
   async function importDoc(msg) {
+    var _a;
     if (!batch) batch = newBatch();
     const state = batch;
     const parts = state.chunks.get(msg.docId);
@@ -887,6 +904,8 @@
     };
     let frame = null;
     const before = new Set(figma.currentPage.children.map((c2) => c2.id));
+    const old = msg.replace ? framesNamed(doc.name)[0] : void 0;
+    const oldBoard = old ? framesNamed(`${doc.name} \xB7 Components`)[0] : void 0;
     try {
       frame = await buildRoot(doc.root, ctx);
       frame.name = doc.name;
@@ -905,14 +924,26 @@
       if (msg.settings.components) {
         send({ type: "progress", message: "Creating text and color styles\u2026" });
         try {
-          const made = await applyStyles(board ? [board, frame] : [frame], doc.name);
+          const made = await applyStyles(board ? [board, frame] : [frame], (_a = doc.group) != null ? _a : doc.name);
           state.made.text += made.text;
           state.made.color += made.color;
         } catch (err) {
           console.error("[page-to-figma] styles", err);
         }
       }
-      state.cursorX += frame.width + FRAME_GAP;
+      if (old && !old.removed) {
+        const parent = old.parent;
+        swap(old, frame);
+        if (oldBoard && !oldBoard.removed) oldBoard.remove();
+        if (board) {
+          parent.insertChild(parent.children.indexOf(frame) + 1, board);
+          board.x = frame.x;
+          board.y = frame.y + frame.height + FRAME_GAP;
+        }
+        state.updated++;
+      } else {
+        state.cursorX += frame.width + FRAME_GAP;
+      }
       state.frames.push(frame);
       send({ type: "doc-done", docId: msg.docId, nodeCount: ctx.built });
     } catch (err) {
@@ -937,7 +968,8 @@
         text && `${text} text style${text > 1 ? "s" : ""}`,
         color && `${color} color style${color > 1 ? "s" : ""}`
       ].filter(Boolean);
-      const what = frames.length === 1 ? `Imported "${frames[0].name}"` : `Imported ${frames.length} frames`;
+      const verb = state.updated === frames.length ? "Updated" : "Imported";
+      const what = frames.length === 1 ? `${verb} "${frames[0].name}"` : `${verb} ${frames.length} frames`;
       figma.notify(extras.length ? `${what} with ${extras.join(", ")}` : what);
     }
     send({ type: "batch-done", frames: frames.length, cancelled: state.cancelled });
@@ -956,6 +988,9 @@
         }
         case "save-settings":
           await figma.clientStorage.setAsync(SETTINGS_KEY, msg.settings);
+          break;
+        case "find-existing":
+          send({ type: "existing", names: msg.names.filter((n2) => framesNamed(n2).length > 0) });
           break;
         case "check-fonts":
           send({ type: "fonts", resolution: await resolveFonts(msg.requests) });

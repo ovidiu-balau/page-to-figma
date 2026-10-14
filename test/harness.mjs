@@ -40,7 +40,8 @@ addEventListener('message', (e) => {
     cap.fontRequests = m.requests;
     const missing = (params.get('missing') || '').split(',').filter(Boolean);
     reply({ type: 'fonts', resolution: { families: Object.fromEntries(m.requests.map((r) => [r.family, 'Inter'])), missing, available: ['Inter', 'Roboto', 'SF Pro', 'Geist', 'Playfair Display', 'JetBrains Mono'] } });
-  } else if (m.type === 'image') cap.images[m.id] = b64(m.bytes);
+  } else if (m.type === 'find-existing') reply({ type: 'existing', names: [] });
+  else if (m.type === 'image') cap.images[m.id] = b64(m.bytes);
   else if (m.type === 'doc-chunk') (cap.chunks[m.docId] = cap.chunks[m.docId] || [])[m.index] = m.data;
   else if (m.type === 'import-doc') {
     cap.docs[m.docId] = JSON.parse(cap.chunks[m.docId].join(''));

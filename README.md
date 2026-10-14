@@ -51,8 +51,21 @@ file. Any wording works ("put it in Figma", "import this into Figma").
 | send it to Figma as mobile | the same at 390px wide |
 | send https://example.com to Figma | a public web page |
 | send ~/Desktop/page.html to Figma | an HTML file on your computer |
+| send the Payment screen to Figma | just that screen or page of the design, cut to its own frame |
 
 Claude sends the code it wrote in the same chat; for a design from another chat, paste its code in first.
+
+### One page at a time, one copy in Figma
+
+Name the page or screen you want ("send 02 · Payment to Figma", "send the Member Zone page") and only
+that part is imported, instead of the whole design again. The name is matched against the design's
+own labels: in-page screens, section headings and the labels above drawn screens. A chapter heading
+brings that chapter's screens together. If nothing matches, the plugin lists the names it found.
+
+When a frame with the same name is already on the Figma page, the plugin asks: **Replace** swaps it in
+place (same spot, same section, components board replaced too; Cmd+Z brings the old one back), or
+**Add a copy** puts the new one beside it. Say "replace it" or "as a new copy" to skip the question,
+or set a default under Options > Already in Figma.
 
 The extension starts the relay itself, so nothing else needs to run. Keep Page to Figma open in Figma
 desktop to receive it; anything sent while it is closed imports when you open it (within the hour).
@@ -77,6 +90,7 @@ Without Claude, the same command works from a terminal:
 node scripts/send.mjs page.html --title "Homepage" --width 1440   # a local file, with the files beside it embedded
 node scripts/send.mjs https://example.com                         # a URL, fetched and rendered in the plugin
 node scripts/send.mjs Pricing.jsx                                 # a React component, rendered with Tailwind
+node scripts/send.mjs journey.html --only "02 · Payment" --replace # one screen, replacing the frame already in Figma
 ```
 
 Pages keep their scripts, so designs that render with JavaScript still import.
@@ -98,6 +112,7 @@ If a page uses fonts Figma does not have, a sheet asks for a replacement for eac
 | --- | --- |
 | Use Auto Layout | On by default. Flex and Grid containers become Auto Layout frames, but only where Auto Layout reproduces the browser's placement exactly. Everything else keeps absolute positions. |
 | Components and styles | On by default. Parts that repeat with the same structure and styling (cards, buttons, list items) become components on a board under the import, with each copy an instance carrying its own text and images. Text sizes and colors used across the page become text and color styles, grouped under the page's name. |
+| Already in Figma | Ask each time (default), Replace it, or Add a copy, when a frame with the same name is already on the page. Matches frames on the page and inside its sections. |
 | Leave out pop-ups | On by default. Skips cookie banners, chat bubbles, newsletter prompts and modals that float over the page. |
 | Include images | Downloads images and embeds them. WebP, AVIF and SVG images are converted for Figma. |
 | Enable Tailwind CSS | Loads the Tailwind play CDN when markup uses Tailwind classes but ships no stylesheet. |

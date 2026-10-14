@@ -20,6 +20,7 @@ interface BatchState {
   chunks: Map<string, string[]>;
   frames: FrameNode[];
   made: { components: number; text: number; color: number };
+  updated: number;
   cursorX: number;
   cursorY: number;
   cancelled: boolean;
@@ -45,7 +46,24 @@ function startPosition(): { x: number; y: number } {
 
 function newBatch(): BatchState {
   const { x, y } = startPosition();
-  return { images: new Map(), chunks: new Map(), frames: [], made: { components: 0, text: 0, color: 0 }, cursorX: x, cursorY: y, cancelled: false };
+  return { images: new Map(), chunks: new Map(), frames: [], made: { components: 0, text: 0, color: 0 }, updated: 0, cursorX: x, cursorY: y, cancelled: false };
+}
+
+// Frames an import can stand in for: same name, on this page or in one of its sections.
+function framesNamed(name: string): FrameNode[] {
+  return figma.currentPage.findAll(
+    (n) => n.type === 'FRAME' && n.name === name && (n.parent?.type === 'PAGE' || n.parent?.type === 'SECTION'),
+  ) as FrameNode[];
+}
+
+// Puts a new node where an old one was (same parent, place in the layer list and position) and removes the old.
+function swap(old: FrameNode, next: FrameNode): void {
+  const parent = old.parent as BaseNode & ChildrenMixin;
+  const { x, y } = old;
+  parent.insertChild(parent.children.indexOf(old), next);
+  next.x = x;
+  next.y = y;
+  old.remove();
 }
 
 async function importDoc(msg: Extract<UiMessage, { type: 'import-doc' }>): Promise<void> {
@@ -67,6 +85,8 @@ async function importDoc(msg: Extract<UiMessage, { type: 'import-doc' }>): Promi
   };
   let frame: FrameNode | null = null;
   const before = new Set(figma.currentPage.children.map((c) => c.id));
+  const old = msg.replace ? framesNamed(doc.name)[0] : undefined;
+  const oldBoard = old ? framesNamed(`${doc.name} · Components`)[0] : undefined;
   try {
     frame = await buildRoot(doc.root, ctx);
     frame.name = doc.name;
@@ -87,7 +107,7 @@ async function importDoc(msg: Extract<UiMessage, { type: 'import-doc' }>): Promi
     if (msg.settings.components) {
       send({ type: 'progress', message: 'Creating text and color styles…' });
       try {
-        const made = await applyStyles(board ? [board, frame] : [frame], doc.name);
+        const made = await applyStyles(board ? [board, frame] : [frame], doc.group ?? doc.name);
         state.made.text += made.text;
         state.made.color += made.color;
       } catch (err) {
@@ -95,7 +115,20 @@ async function importDoc(msg: Extract<UiMessage, { type: 'import-doc' }>): Promi
         console.error('[page-to-figma] styles', err);
       }
     }
-    state.cursorX += frame.width + FRAME_GAP;
+    if (old && !old.removed) {
+      // An update takes the old frame's place; its components board is replaced and sits under it again.
+      const parent = old.parent as BaseNode & ChildrenMixin;
+      swap(old, frame);
+      if (oldBoard && !oldBoard.removed) oldBoard.remove();
+      if (board) {
+        parent.insertChild(parent.children.indexOf(frame) + 1, board);
+        board.x = frame.x;
+        board.y = frame.y + frame.height + FRAME_GAP;
+      }
+      state.updated++;
+    } else {
+      state.cursorX += frame.width + FRAME_GAP;
+    }
     state.frames.push(frame);
     send({ type: 'doc-done', docId: msg.docId, nodeCount: ctx.built });
   } catch (err) {
@@ -122,7 +155,8 @@ function finishBatch(): void {
       text && `${text} text style${text > 1 ? 's' : ''}`,
       color && `${color} color style${color > 1 ? 's' : ''}`,
     ].filter(Boolean);
-    const what = frames.length === 1 ? `Imported "${frames[0].name}"` : `Imported ${frames.length} frames`;
+    const verb = state.updated === frames.length ? 'Updated' : 'Imported';
+    const what = frames.length === 1 ? `${verb} "${frames[0].name}"` : `${verb} ${frames.length} frames`;
     figma.notify(extras.length ? `${what} with ${extras.join(', ')}` : what);
   }
   send({ type: 'batch-done', frames: frames.length, cancelled: state.cancelled });
@@ -142,6 +176,9 @@ async function handle(msg: UiMessage): Promise<void> {
       }
       case 'save-settings':
         await figma.clientStorage.setAsync(SETTINGS_KEY, msg.settings);
+        break;
+      case 'find-existing':
+        send({ type: 'existing', names: msg.names.filter((n) => framesNamed(n).length > 0) });
         break;
       case 'check-fonts':
         send({ type: 'fonts', resolution: await resolveFonts(msg.requests) });

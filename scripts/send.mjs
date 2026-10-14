@@ -2,9 +2,13 @@
 //
 //   node scripts/send.mjs <page.html | component.jsx | https://… | -> [--title "Name"] [--width 1440]
 //                         [--react] [--base https://…] [--blobs dir] [--out file]
+//                         [--only "Screen name"]… [--replace | --copy]
 //
 // --react: the input is a React component (a Claude artifact); it is rendered with Tailwind. Files
 // ending in .jsx or .tsx are treated this way automatically.
+// --only: import just this page or screen of the document, by its name or heading; repeat for more.
+// --replace / --copy: when a frame with the same name is already in Figma, replace it in place or add a
+// copy beside it, without asking. By default the plugin asks.
 // --blobs: a folder of uploaded assets saved by id (abc123.png); `/_blob/abc123` references in the page,
 // as Claude Design artboards use them, are embedded from there.
 //
@@ -25,6 +29,9 @@ const bool = (name) => {
   const i = args.indexOf(`--${name}`);
   return i >= 0 ? (args.splice(i, 1), true) : false;
 };
+const only = [];
+for (let v = flag('only'); v !== undefined; v = flag('only')) only.push(v);
+const existing = bool('replace') ? 'replace' : bool('copy') ? 'copy' : undefined;
 const title = flag('title');
 const width = Number(flag('width') ?? 1440);
 let base = flag('base') ?? '';
@@ -68,13 +75,13 @@ if (!(await ensureRelay(relayScript))) {
 }
 let result;
 try {
-  result = await postCapture({ html, title: name, width, base });
+  result = await postCapture({ html, title: name, width, base, only, existing });
 } catch (err) {
   console.error(err.message);
   process.exit(1);
 }
 console.log(
   result.listeners
-    ? `Sent "${name}" to Figma (${Math.round(html.length / 1024)} KB, ${width}px wide).`
+    ? `Sent ${only.length ? `${only.map((o) => `"${o}"`).join(', ')} from ` : ''}"${name}" to Figma (${Math.round(html.length / 1024)} KB, ${width}px wide).`
     : `Queued "${name}". Open Page to Figma in Figma and it imports straight away.`,
 );

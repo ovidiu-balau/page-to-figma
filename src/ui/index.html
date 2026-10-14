@@ -90,6 +90,7 @@
       <div class="card">
         <label class="setting-row" for="opt-autolayout"><span><span class="setting-title">Use Auto Layout</span><span class="setting-description">Turn Flexbox and Grid containers into Auto Layout frames where the result matches the page.</span></span><input type="checkbox" id="opt-autolayout" class="switch" role="switch" checked></label>
         <label class="setting-row" for="opt-components"><span><span class="setting-title">Components and styles</span><span class="setting-description">Repeated parts become components, and the page's text and colors become styles.</span></span><input type="checkbox" id="opt-components" class="switch" role="switch" checked></label>
+        <div class="setting-row"><span><label for="opt-existing" class="setting-title">Already in Figma</label><span class="setting-description">When a frame with the same name is on this page: ask, replace it in place, or add a copy.</span></span><select id="opt-existing"><option value="ask">Ask each time</option><option value="replace">Replace it</option><option value="copy">Add a copy</option></select></div>
         <label class="setting-row" for="opt-overlays"><span><span class="setting-title">Leave out pop-ups</span><span class="setting-description">Skip cookie banners, chat bubbles and modals that float over the page.</span></span><input type="checkbox" id="opt-overlays" class="switch" role="switch" checked></label>
         <label class="setting-row" for="opt-images"><span><span class="setting-title">Include images</span><span class="setting-description">Download images and place them in the design.</span></span><input type="checkbox" id="opt-images" class="switch" role="switch" checked></label>
       </div>
@@ -146,6 +147,23 @@
     <div class="sheet-footer">
       <span class="hint">Replacements apply to this import only.</span>
       <button type="button" id="font-apply" class="btn-primary">Apply and import</button>
+    </div>
+  </div>
+  <div id="existing-sheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="existing-title" hidden>
+    <div class="sheet-header">
+      <div>
+        <div class="sheet-title" id="existing-title">Already in Figma</div>
+        <div class="sheet-sub" id="existing-sub">A frame with this name is already on this page.</div>
+      </div>
+      <button type="button" class="icon-button" id="existing-close" aria-label="Cancel import"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg></button>
+    </div>
+    <div class="sheet-body" id="existing-list"></div>
+    <div class="sheet-footer">
+      <span class="hint">Cmd+Z brings the old frame back.</span>
+      <div class="sheet-actions">
+        <button type="button" id="existing-copy" class="btn-secondary">Add a copy</button>
+        <button type="button" id="existing-replace" class="btn-primary">Replace</button>
+      </div>
     </div>
   </div>
   <div id="render-host" aria-hidden="true"></div>

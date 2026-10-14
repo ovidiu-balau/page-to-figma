@@ -144,6 +144,7 @@ export type BlendMode =
 export interface ImportDocument {
   name: string;
   root: FrameData;
+  group?: string; // the design a page or screen came from: its styles share that design's folder
 }
 
 export interface FontRequest {
@@ -159,6 +160,9 @@ export interface FontResolution {
   available: string[]; // every Figma family, for the mapping sheet
 }
 
+// What happens when a frame with the same name is already on the Figma page.
+export type ExistingMode = 'ask' | 'replace' | 'copy';
+
 export interface ImportSettings {
   autoLayout: boolean;
   includeImages: boolean;
@@ -173,7 +177,8 @@ export type UiMessage =
   | { type: 'begin-batch'; total: number }
   | { type: 'image'; id: string; bytes: Uint8Array }
   | { type: 'doc-chunk'; docId: string; index: number; total: number; data: string }
-  | { type: 'import-doc'; docId: string; fontMap: Record<string, string>; settings: ImportSettings }
+  | { type: 'find-existing'; names: string[] }
+  | { type: 'import-doc'; docId: string; fontMap: Record<string, string>; settings: ImportSettings; replace?: boolean }
   | { type: 'end-batch' }
   | { type: 'cancel' }
   | { type: 'notify'; message: string; error?: boolean };
@@ -182,6 +187,7 @@ export type UiMessage =
 export type MainMessage =
   | { type: 'settings'; settings: PersistedSettings | null }
   | { type: 'fonts'; resolution: FontResolution }
+  | { type: 'existing'; names: string[] }
   | { type: 'progress'; message: string; done?: number; total?: number }
   | { type: 'doc-done'; docId: string; nodeCount: number }
   | { type: 'batch-done'; frames: number; cancelled: boolean }
@@ -197,6 +203,7 @@ export interface PersistedSettings {
   includeImages: boolean;
   hideOverlays: boolean;
   components: boolean;
+  existing: ExistingMode;
   tailwind: boolean;
   disablePreflight: boolean;
   tailwindConfig: string;
@@ -215,6 +222,7 @@ export const DEFAULT_SETTINGS: PersistedSettings = {
   includeImages: true,
   hideOverlays: true,
   components: true,
+  existing: 'ask',
   tailwind: true,
   disablePreflight: true,
   tailwindConfig: '',

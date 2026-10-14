@@ -1,4 +1,5 @@
 import JSZip from 'jszip';
+import type { ExistingMode } from '../shared/types';
 import { fetchText } from './net';
 
 export interface SourceDoc {
@@ -7,6 +8,8 @@ export interface SourceDoc {
   baseUrl?: string;
   fromCode?: boolean; // pasted snippet: Tailwind and the root font size always apply
   width?: number; // browser captures keep the width they were taken at
+  only?: string[]; // import just these pages or screens, by name
+  existing?: ExistingMode; // overrides the plugin setting for this source
 }
 
 export interface Capture {
@@ -19,6 +22,14 @@ export interface Capture {
   html: string;
   // Sent from source (scripts/send.mjs) rather than frozen in a browser: its scripts still need to run.
   live?: boolean;
+  only?: string[];
+  existing?: ExistingMode;
+}
+
+function sendOptions(capture: Capture): Pick<SourceDoc, 'only' | 'existing'> {
+  const only = Array.isArray(capture.only) ? capture.only.filter((n) => typeof n === 'string' && n.trim()).map((n) => n.trim()) : [];
+  const existing = (['ask', 'replace', 'copy'] as const).find((m) => m === capture.existing);
+  return { ...(only.length ? { only } : {}), ...(existing ? { existing } : {}) };
 }
 
 export function isCapture(value: unknown): value is Capture {
@@ -30,7 +41,7 @@ export function isCapture(value: unknown): value is Capture {
 // is page source, so its scripts stay and render it in the plugin.
 export function fromCapture(capture: Capture): SourceDoc {
   const web = /^https?:/i.test(capture.url ?? '');
-  if (capture.live && !web) return { name: capture.title || 'Page', html: capture.html, width: capture.width };
+  if (capture.live && !web) return { name: capture.title || 'Page', html: capture.html, width: capture.width, ...sendOptions(capture) };
   const parsed = new DOMParser().parseFromString(capture.html, 'text/html');
   if (!capture.live) for (const s of Array.from(parsed.querySelectorAll('script'))) s.remove();
   if (web) {
@@ -44,6 +55,7 @@ export function fromCapture(capture: Capture): SourceDoc {
     html: '<!DOCTYPE html>\n' + parsed.documentElement.outerHTML,
     baseUrl: web ? capture.url : undefined,
     width: capture.width,
+    ...sendOptions(capture),
   };
 }
 

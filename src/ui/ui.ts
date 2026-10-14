@@ -1,9 +1,10 @@
-import { DEFAULT_SETTINGS, type FontRequest, type FontResolution, type ImportDocument, type PersistedSettings } from '../shared/types';
+import { DEFAULT_SETTINGS, type ExistingMode, type FontRequest, type FontResolution, type ImportDocument, type PersistedSettings } from '../shared/types';
 import { firstNamedFamily } from '../shared/font-names';
 import { extractDocument, materializePseudos } from './extract/walker';
 import { ImageRegistry } from './extract/images';
 import { detectPages, showPage, type InPage } from './pages';
 import { delay, frames, render, type RenderOptions, type Rendered } from './render';
+import { findScreen, matchScore, screenNames } from './screens';
 import { fromCapture, fromCode, isCapture, loadFiles, loadUrl, type SourceDoc } from './sources';
 import { nextMessage, onMain, post, sendDocument } from './transport';
 
@@ -22,6 +23,7 @@ const els = {
   autoLayout: $<HTMLInputElement>('opt-autolayout'),
   overlays: $<HTMLInputElement>('opt-overlays'),
   components: $<HTMLInputElement>('opt-components'),
+  existing: $<HTMLSelectElement>('opt-existing'),
   images: $<HTMLInputElement>('opt-images'),
   tailwind: $<HTMLInputElement>('opt-tailwind'),
   preflight: $<HTMLInputElement>('opt-preflight'),
@@ -37,6 +39,9 @@ const els = {
   pagesAll: $<HTMLInputElement>('pages-all'),
   pagesSub: $('pages-sub'),
   pagesTitle: $('pages-title'),
+  existingSheet: $('existing-sheet'),
+  existingList: $('existing-list'),
+  existingSub: $('existing-sub'),
   fontSheet: $('font-sheet'),
   fontList: $('font-list'),
   fontCount: $('font-count'),
@@ -76,6 +81,7 @@ function readForm(): PersistedSettings {
     includeImages: els.images.checked,
     hideOverlays: els.overlays.checked,
     components: els.components.checked,
+    existing: els.existing.value as ExistingMode,
     tailwind: els.tailwind.checked,
     disablePreflight: els.preflight.checked,
     tailwindConfig: els.twConfig.value,
@@ -95,6 +101,8 @@ function applySettings(s: PersistedSettings): void {
   els.images.checked = settings.includeImages;
   els.overlays.checked = settings.hideOverlays;
   els.components.checked = settings.components;
+  els.existing.value = settings.existing;
+  if (!els.existing.value) els.existing.value = 'ask';
   els.tailwind.checked = settings.tailwind;
   els.preflight.checked = settings.disablePreflight;
   els.twConfig.value = settings.tailwindConfig;
@@ -242,9 +250,57 @@ async function loadSources(): Promise<SourceDoc[]> {
 interface Candidate {
   docIndex: number;
   page: InPage | null;
+  region?: Element[]; // one screen of a long page
   name: string;
   source: string;
   selected: boolean;
+}
+
+// Pages or screens asked for by name ("send the Payment screen"): in-page pages first, then labelled
+// screens. Returns what was found and the names that matched nothing.
+function pickByName(docIndex: number, source: SourceDoc, pages: InPage[], r: Rendered): { found: Candidate[]; missing: string[] } {
+  const found: Candidate[] = [];
+  const missing: string[] = [];
+  for (const want of source.only ?? []) {
+    const page = pages.length >= 2
+      ? pages.map((p) => ({ p, score: matchScore(want, p.name) })).filter((m) => m.score).sort((a, b) => b.score - a.score)[0]?.p
+      : undefined;
+    if (page) {
+      found.push({ docIndex, page, name: page.name, source: source.name, selected: true });
+      continue;
+    }
+    const screen = findScreen(r.doc, r.win, want);
+    if (screen) found.push({ docIndex, page: null, region: screen.els, name: `${source.name} / ${screen.name}`, source: source.name, selected: true });
+    else missing.push(want);
+  }
+  return { found, missing };
+}
+
+// Asks whether frames that are already on the page are replaced or kept beside a new copy.
+function askExisting(names: string[]): Promise<'replace' | 'copy' | null> {
+  els.existingList.innerHTML = '';
+  for (const n of names) {
+    const row = document.createElement('div');
+    row.className = 'existing-row';
+    row.textContent = n;
+    row.title = n;
+    els.existingList.appendChild(row);
+  }
+  els.existingSub.textContent = names.length === 1
+    ? 'A frame with this name is already on this page. Replace it in place, or add a new copy beside it?'
+    : `${names.length} frames with these names are already on this page. Replace them in place, or add new copies beside them?`;
+  els.existingSheet.hidden = false;
+  setStatus('Already in Figma: replace or add a copy?', 'info');
+  return new Promise((resolve) => {
+    const close = (value: 'replace' | 'copy' | null) => {
+      els.existingSheet.hidden = true;
+      for (const id of ['existing-replace', 'existing-copy', 'existing-close']) $(id).onclick = null;
+      resolve(value);
+    };
+    $('existing-replace').onclick = () => close('replace');
+    $('existing-copy').onclick = () => close('copy');
+    $('existing-close').onclick = () => close(null);
+  });
 }
 
 // Page picker: thumbnails are live, scaled-down renders of each page.
@@ -400,6 +456,8 @@ async function runImport(preset?: SourceDoc[]): Promise<void> {
 
     const candidates: Candidate[] = [];
     const pagesByDoc: InPage[][] = [];
+    const named = sources.some((src) => src.only?.length);
+    const notFound: string[] = [];
     for (let i = 0; i < sources.length; i++) {
       setStatus(sources.length > 1 ? `Rendering ${i + 1} of ${sources.length}: ${sources[i].name}` : `Rendering ${sources[i].name}…`);
       const r = await render(sources[i], opts, els.renderHost);
@@ -407,14 +465,25 @@ async function runImport(preset?: SourceDoc[]): Promise<void> {
       checkCancelled();
       const pages = detectPages(r.doc, r.win);
       pagesByDoc.push(pages);
-      if (pages.length >= 2) {
+      if (sources[i].only?.length) {
+        const { found, missing } = pickByName(i, sources[i], pages, r);
+        candidates.push(...found);
+        notFound.push(...missing);
+        if (!found.length) {
+          const names = pages.length >= 2 ? pages.map((p) => p.name) : screenNames(r.doc, r.win);
+          throw new Error(
+            `Could not find ${missing.map((m) => `"${m}"`).join(' or ')} in ${sources[i].name}.` +
+            (names.length ? ` Names on this page: ${names.join(', ')}.` : ''),
+          );
+        }
+      } else if (pages.length >= 2) {
         for (const p of pages) candidates.push({ docIndex: i, page: p, name: p.name, source: `${sources[i].name} · in-page`, selected: true });
       } else {
         candidates.push({ docIndex: i, page: null, name: sources[i].name, source: sources[i].baseUrl ?? sources[i].name, selected: true });
       }
     }
 
-    if (candidates.length > 1) {
+    if (candidates.length > 1 && !named) {
       busy = false;
       const ok = await pickPages(candidates, sources, opts);
       busy = true;
@@ -438,12 +507,28 @@ async function runImport(preset?: SourceDoc[]): Promise<void> {
         const result = await extractDocument(
           r.win, c.name, opts.width, opts.height,
           { autoLayout: s.autoLayout, includeImages: s.includeImages, proxy: s.proxyUrl, hideOverlays: s.hideOverlays },
-          registry, (count) => setStatus(`${prefix}Reading layout… ${count} elements`),
+          registry, (count) => setStatus(`${prefix}Reading layout… ${count} elements`), c.region,
         );
+        if (c.page || c.region) result.doc.group = sources[c.docIndex].name;
         docs.push(result);
       } finally {
         restorePseudos();
         restorePage?.();
+      }
+    }
+    checkCancelled();
+
+    // Frames already on the page with the same name are replaced in place or kept, as the sender or
+    // the Options setting says; "ask" leaves it to the person at the canvas.
+    const mode = sources.find((src) => src.existing)?.existing ?? s.existing;
+    let replace = new Set<string>();
+    if (mode !== 'copy') {
+      post({ type: 'find-existing', names: docs.map((d) => d.doc.name) });
+      const { names } = await nextMessage('existing');
+      if (names.length) {
+        const choice = mode === 'replace' ? 'replace' : await askExisting(names);
+        if (!choice) throw new CancelledImport();
+        if (choice === 'replace') replace = new Set(names);
       }
     }
     checkCancelled();
@@ -479,14 +564,19 @@ async function runImport(preset?: SourceDoc[]): Promise<void> {
       const docId = `d${Date.now().toString(36)}${n}`;
       setStatus(docs.length > 1 ? `Creating layers for ${d.doc.name} (${n + 1}/${docs.length})…` : 'Creating layers…');
       await sendDocument(docId, d.doc);
-      post({ type: 'import-doc', docId, fontMap, settings: { autoLayout: s.autoLayout, includeImages: s.includeImages, components: s.components } });
+      post({
+        type: 'import-doc', docId, fontMap, replace: replace.has(d.doc.name),
+        settings: { autoLayout: s.autoLayout, includeImages: s.includeImages, components: s.components },
+      });
       const reply = await nextMessage(['doc-done', 'error', 'batch-done']);
       if (reply.type === 'error') throw new Error(reply.message);
       if (reply.type === 'batch-done') throw new CancelledImport();
     }
     post({ type: 'end-batch' });
     const done = await nextMessage('batch-done');
-    const what = done.frames === 1 ? `Imported "${docs[0].doc.name}"` : `Imported ${done.frames} frames`;
+    const verb = replace.size === docs.length ? 'Updated' : 'Imported';
+    let what = done.frames === 1 ? `${verb} "${docs[0].doc.name}"` : `${verb} ${done.frames} frames`;
+    if (notFound.length) what += `. Not found: ${notFound.join(', ')}`;
     setStatus(failed ? `${what}. ${failed} image${failed > 1 ? 's' : ''} could not be downloaded${s.proxyUrl ? '' : ' (a CORS proxy can help)'}.` : what, 'success');
   } catch (err) {
     if (err instanceof CancelledImport) {
@@ -576,7 +666,7 @@ function init(): void {
   bindFiles();
   els.importBtn.addEventListener('click', onImportClick);
   for (const el of [els.url, els.html, els.css, els.twConfig, els.fontSize, els.proxy]) el.addEventListener('input', scheduleSave);
-  for (const el of [els.dark, els.autoLayout, els.overlays, els.components, els.images, els.tailwind, els.preflight, els.viewport]) el.addEventListener('change', scheduleSave);
+  for (const el of [els.dark, els.autoLayout, els.overlays, els.components, els.existing, els.images, els.tailwind, els.preflight, els.viewport]) el.addEventListener('change', scheduleSave);
   els.url.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !busy) void runImport();
   });
